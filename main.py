@@ -1,6 +1,6 @@
 from cucris import CucrisClient
 from cas_compare import find_unknown_cas
-from cas_smiles import fetch_smiles
+from cas_smiles import add_smiles
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     )
 
     # 未登録CASだけPubChemからSMILES取得
-    results, failed = fetch_smiles(unknown)
+    results, failed = add_smiles(unknown)
 
     results.to_csv(
         "new_cas_smiles.csv",
