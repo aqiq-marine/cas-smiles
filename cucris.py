@@ -1,17 +1,12 @@
+import io
 import os
-from pathlib import Path
 
+import pandas as pd
 import requests
 
 
 class CucrisClient:
     BASE_URL = "https://www.chiba-cucris.jp/cris_v3_0"
-
-    USER_AGENT = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/151.0.0.0 Safari/537.36"
-    )
 
     def __init__(
         self,
@@ -23,19 +18,19 @@ class CucrisClient:
 
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": self.USER_AGENT,
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/151.0.0.0 Safari/537.36"
+            )
         })
 
     def login(self) -> None:
-        """CUCRISにログインする。"""
-
         login_url = f"{self.BASE_URL}/User/Login"
 
-        # ログインページを取得してセッションを確立
         r = self.session.get(login_url)
         r.raise_for_status()
 
-        # ログイン
         r = self.session.post(
             login_url,
             headers={
@@ -55,12 +50,9 @@ class CucrisClient:
         group_ids: str,
         build_ids: str,
         storage_ids: str,
-    ) -> requests.Response:
-        """指定条件で薬品使用状況を検索する。"""
-
+    ) -> None:
         search_url = f"{self.BASE_URL}/Chemical/SearchUsage"
 
-        # SearchUsageページ
         r = self.session.get(
             search_url,
             headers={
@@ -69,7 +61,6 @@ class CucrisClient:
         )
         r.raise_for_status()
 
-        # 検索条件をセット
         r = self.session.post(
             f"{self.BASE_URL}/Chemical/GetSearchUsageList",
             headers={
@@ -85,14 +76,8 @@ class CucrisClient:
         )
         r.raise_for_status()
 
-        return r
-
-    def download_csv(
-        self,
-        output_path: str | Path = "StockList.csv",
-    ) -> Path:
-        """現在の検索条件に対応するCSVを取得して保存する。"""
-
+    def download_csv(self) -> pd.DataFrame:
+        """現在の検索条件に対応する在庫データを取得する。"""
         r = self.session.post(
             f"{self.BASE_URL}/Chemical/SearchUsageExport",
             headers={
@@ -105,27 +90,18 @@ class CucrisClient:
         )
         r.raise_for_status()
 
-        # CP932 → UTF-8
-        csv_text = r.content.decode("cp932")
-
-        output_path = Path(output_path)
-        output_path.write_text(
-            csv_text,
-            encoding="utf-8",
-            newline="",
+        return pd.read_csv(
+            io.BytesIO(r.content),
+            encoding="cp932",
         )
-
-        return output_path
 
     def get_stock_list(
         self,
         group_ids: str,
         build_ids: str,
         storage_ids: str,
-        output_path: str | Path = "StockList.csv",
-    ) -> Path:
-        """ログインからCSV取得までを一括して行う。"""
-
+    ) -> pd.DataFrame:
+        """CUCRISから在庫一覧を取得する。"""
         self.login()
 
         self.search_usage(
@@ -134,4 +110,4 @@ class CucrisClient:
             storage_ids=storage_ids,
         )
 
-        return self.download_csv(output_path)
+        return self.download_csv()
