@@ -1,4 +1,6 @@
 from cucris import CucrisClient
+from cas_compare import find_unknown_cas
+from cas_smiles import fetch_smiles
 
 
 def main():
@@ -10,8 +12,26 @@ def main():
         storage_ids="362,1220,1222",
     )
 
-    print(df)
-    print(df.columns)
+    # 参照DBに存在しないCASを抽出
+    unknown = find_unknown_cas(
+        df,
+        "cas_smiles.csv",
+    )
+
+    # 未登録CASだけPubChemからSMILES取得
+    results, failed = fetch_smiles(unknown)
+
+    results.to_csv(
+        "new_cas_smiles.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    failed.to_csv(
+        "failed_cas.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
 
 
 if __name__ == "__main__":
