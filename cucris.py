@@ -51,7 +51,7 @@ class CucrisClient:
         build_ids: str,
         storage_ids: str,
     ) -> None:
-        search_url = f"{self.BASE_URL}/Chemical/SearchUsage"
+        search_url = f"{self.BASE_URL}/Chemical/SearchStock"
 
         r = self.session.get(
             search_url,
@@ -62,16 +62,21 @@ class CucrisClient:
         r.raise_for_status()
 
         r = self.session.post(
-            f"{self.BASE_URL}/Chemical/GetSearchUsageList",
+            f"{self.BASE_URL}/Chemical/GetSearchStockList",
             headers={
                 "Referer": search_url,
                 "Origin": "https://www.chiba-cucris.jp",
                 "X-Requested-With": "XMLHttpRequest",
             },
+            # data={
+            #     "SearchGroupIDs": group_ids,
+            #     "SearchBuildIDs": build_ids,
+            #     "SearchStorageIDs": storage_ids,
+            # },
             data={
-                "SearchGroupIDs": group_ids,
-                "SearchBuildIDs": build_ids,
-                "SearchStorageIDs": storage_ids,
+                "page": 0,
+                "pageSize": 20,
+                "pk":"StockID"
             },
         )
         r.raise_for_status()
@@ -79,9 +84,9 @@ class CucrisClient:
     def download_csv(self) -> pd.DataFrame:
         """現在の検索条件に対応する在庫データを取得する。"""
         r = self.session.post(
-            f"{self.BASE_URL}/Chemical/SearchUsageExport",
+            f"{self.BASE_URL}/Chemical/SearchStockExport",
             headers={
-                "Referer": f"{self.BASE_URL}/Chemical/SearchUsage",
+                "Referer": f"{self.BASE_URL}/Chemical/SearchStock",
                 "Origin": "https://www.chiba-cucris.jp",
             },
             data={

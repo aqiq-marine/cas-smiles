@@ -13,6 +13,12 @@ class ConvertTest(unittest.TestCase):
             source = root / "cucris.csv"
             smiles = root / "cas_smiles.csv"
             output = root / "inventory.csv"
+            shelves = root / "shelf_mapping.json"
+
+            shelves.write_text(
+                '{"毒劇物庫": "毒劇物", "冷蔵庫": "冷蔵"}',
+                encoding="utf-8",
+            )
 
             with smiles.open("w", encoding="utf-8", newline="") as stream:
                 writer = csv.DictWriter(stream, fieldnames=("cas", "smiles"))
@@ -38,7 +44,7 @@ class ConvertTest(unittest.TestCase):
                 )
                 writer.writerow({"CAS番号": "", "化学物質製品名（日）": "空欄"})
 
-            convert(source, smiles, output)
+            convert(source, smiles, output, shelves)
 
             with output.open(encoding="utf-8", newline="") as stream:
                 rows = list(csv.DictReader(stream))
@@ -50,7 +56,7 @@ class ConvertTest(unittest.TestCase):
                         "cas": "50-00-0",
                         "smiles": "C=O",
                         "name": "ホルムアルデヒド液",
-                        "location": "毒劇物庫",
+                        "location": "毒劇物",
                         "amount": "500 g",
                         "supplier": "",
                     }

@@ -8,7 +8,7 @@ def find_unknown_cas(
     cas_smiles_path: str | Path,
     *,
     df_cas_column: str = "CAS番号",
-    reference_cas_column: str = "CAS",
+    reference_cas_column: str = "cas",
 ) -> pd.DataFrame:
     """
     参照DBに存在しないCAS番号を持つ行を抽出する。

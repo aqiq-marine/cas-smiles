@@ -7,6 +7,7 @@ Usage:
 from __future__ import annotations
 
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -30,6 +31,17 @@ def load_smiles(path: Path) -> dict[str, str]:
     return result
 
 
+def load_shelf_short_names(path: Path | None) -> dict[str, str]:
+    """Load the Japanese storage-name to short-name mapping if available."""
+    if path is None or not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as stream:
+        mapping = json.load(stream)
+    if not isinstance(mapping, dict):
+        raise ValueError(f"shelf mapping must be a JSON object: {path}")
+    return {str(name): str(short_name) for name, short_name in mapping.items()}
+
+
 def inventory_amount(row: dict[str, str]) -> str:
     # CUCris exports inventory as either a numeric amount with a unit or
     # the measured pre-use weight. Prefer the explicit amount when present.
@@ -42,8 +54,16 @@ def inventory_amount(row: dict[str, str]) -> str:
     return f"{weight} g" if weight else ""
 
 
-def convert(source: Path, smiles_path: Path, destination: Path) -> None:
+def convert(
+    source: Path,
+    smiles_path: Path,
+    destination: Path,
+    shelves_path: Path | None = None,
+) -> None:
     smiles_by_cas = load_smiles(smiles_path)
+    if shelves_path is None:
+        shelves_path = Path(__file__).parent.parent / "shelves.json"
+    shorten_shelf = load_shelf_short_names(shelves_path)
     with source.open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
         with destination.open("w", encoding="utf-8", newline="") as output:
@@ -53,14 +73,15 @@ def convert(source: Path, smiles_path: Path, destination: Path) -> None:
                 cas = clean(row.get("CAS番号"))
                 if not cas:
                     continue
+                location = clean(row.get("保管庫名（日）"))
                 writer.writerow(
                     {
                         "cas": cas,
                         "smiles": smiles_by_cas.get(cas, ""),
                         "name": clean(row.get("化学物質製品名（日）")),
-                        "location": clean(row.get("保管庫名（日）")),
+                        "location": shorten_shelf.get(location, location),
                         "amount": inventory_amount(row),
-                        "supplier": "",
+                        "supplier": clean(row.get("製造元名（英）")),
                     }
                 )
 
@@ -72,7 +93,8 @@ def main() -> int:
     source = Path(sys.argv[1])
     destination = Path(sys.argv[2]) if len(sys.argv) == 3 else source.with_name("inventory.csv")
     smiles_path = Path(__file__).with_name("cas_smiles.csv")
-    convert(source, smiles_path, destination)
+    shelves_path = Path(__file__).parent.parent / "shelves.json"
+    convert(source, smiles_path, destination, shelves_path)
     return 0
 
 
