@@ -83,7 +83,7 @@ def main() -> int:
     project_dir = Path(__file__).parent
     cas_smiles_path = project_dir / "cas_smiles.csv"
     shelves_path = project_dir.parent / "shelves.json"
-    output_path = Path(sys.argv[1]) if len(sys.argv) > 1 else project_dir.parent / "inventory.csv"
+    output_path = Path(sys.argv[1]) if len(sys.argv) > 1 else project_dir.parent / "reagent.csv"
 
     client = CucrisClient()
 
