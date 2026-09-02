@@ -50,13 +50,21 @@ def convert_inventory(df: pd.DataFrame, smiles_by_cas: dict[str, str], shelves_p
         if not cas:
             continue
 
-        amount = clean(row.get("在庫量"))
-        unit = clean(row.get("在庫量単位"))
-        if amount:
-            amount = f"{amount} {unit}".strip()
+        # 1. 「容量」と「容量単位」を最優先で見る
+        volume = clean(row.get("容量"))
+        volume_unit = clean(row.get("容量単位"))
+        if volume:
+            amount = f"{volume} {volume_unit}".strip()
         else:
-            weight = clean(row.get("使用前重量(g)"))
-            amount = f"{weight} g" if weight else ""
+            # 2. 次に「在庫量」と「在庫量単位」を見る
+            amount = clean(row.get("在庫量"))
+            unit = clean(row.get("在庫量単位"))
+            if amount:
+                amount = f"{amount} {unit}".strip()
+            else:
+                # 3. 最後に「使用前重量(g)」を見る
+                weight = clean(row.get("使用前重量(g)"))
+                amount = f"{weight} g" if weight else ""
 
         location = clean(row.get("保管庫名（日）"))
         rows.append({

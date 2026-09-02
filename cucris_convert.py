@@ -43,13 +43,19 @@ def load_shelf_short_names(path: Path | None) -> dict[str, str]:
 
 
 def inventory_amount(row: dict[str, str]) -> str:
-    # CUCris exports inventory as either a numeric amount with a unit or
-    # the measured pre-use weight. Prefer the explicit amount when present.
+    # 1. 「容量」と「容量単位」を最優先で見る
+    volume = clean(row.get("容量"))
+    volume_unit = clean(row.get("容量単位"))
+    if volume:
+        return f"{volume} {volume_unit}".strip()
+
+    # 2. 次に「在庫量」と「在庫量単位」を見る
     amount = clean(row.get("在庫量"))
     unit = clean(row.get("在庫量単位"))
     if amount:
         return f"{amount} {unit}".strip()
 
+    # 3. 最後に「使用前重量(g)」を見る
     weight = clean(row.get("使用前重量(g)"))
     return f"{weight} g" if weight else ""
 
@@ -91,7 +97,7 @@ def main() -> int:
         print("usage: python cucris_convert.py CUCris.csv [output.csv]", file=sys.stderr)
         return 2
     source = Path(sys.argv[1])
-    destination = Path(sys.argv[2]) if len(sys.argv) == 3 else source.with_name("inventory.csv")
+    destination = Path(sys.argv[2]) if len(sys.argv) == 3 else source.with_name("reagent.csv")
     smiles_path = Path(__file__).with_name("cas_smiles.csv")
     shelves_path = Path(__file__).parent.parent / "shelves.json"
     convert(source, smiles_path, destination, shelves_path)
