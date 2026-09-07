@@ -87,11 +87,7 @@ def main() -> int:
 
     client = CucrisClient()
 
-    df = client.get_stock_list(
-        group_ids="266",
-        build_ids="1,7,14",
-        storage_ids="362,1220,1222",
-    )
+    df = client.get_stock_list()
     print(df)
     df = latest_stock_rows(df)
 

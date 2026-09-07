@@ -47,9 +47,26 @@ class CucrisClient:
 
     def search_usage(
         self,
-        group_ids: str,
-        build_ids: str,
-        storage_ids: str,
+    ) -> None:
+        search_url = f"{self.BASE_URL}/Chemical/SearchStock"
+
+        r = self.session.get(
+            f"{self.BASE_URL}/Chemical/GetListSearchStock",
+            headers={
+                "Referer": search_url,
+                "Origin": "https://www.chiba-cucris.jp",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            data={
+                "page": 0,
+                "pageSize": 20,
+                "pk":"StockID",
+            },
+        )
+        r.raise_for_status()
+
+    def search_stock(
+        self,
     ) -> None:
         search_url = f"{self.BASE_URL}/Chemical/SearchStock"
 
@@ -68,15 +85,10 @@ class CucrisClient:
                 "Origin": "https://www.chiba-cucris.jp",
                 "X-Requested-With": "XMLHttpRequest",
             },
-            # data={
-            #     "SearchGroupIDs": group_ids,
-            #     "SearchBuildIDs": build_ids,
-            #     "SearchStorageIDs": storage_ids,
-            # },
             data={
-                "page": 0,
-                "pageSize": 20,
-                "pk":"StockID"
+                "SearchGroupIDs": "",
+                "SearchBuildIDs": "",
+                "SearchStorageIDs": ""
             },
         )
         r.raise_for_status()
@@ -102,17 +114,11 @@ class CucrisClient:
 
     def get_stock_list(
         self,
-        group_ids: str,
-        build_ids: str,
-        storage_ids: str,
     ) -> pd.DataFrame:
         """CUCRISから在庫一覧を取得する。"""
         self.login()
 
-        self.search_usage(
-            group_ids=group_ids,
-            build_ids=build_ids,
-            storage_ids=storage_ids,
-        )
+        self.search_stock()
+        self.search_usage()
 
         return self.download_csv()
