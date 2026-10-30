@@ -11,6 +11,7 @@ import json
 import sys
 from pathlib import Path
 
+from smiles_utils import atom_count
 
 OUTPUT_FIELDS = ("cas", "smiles", "name", "location", "amount", "supplier")
 
@@ -72,24 +73,33 @@ def convert(
     shorten_shelf = load_shelf_short_names(shelves_path)
     with source.open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
-        with destination.open("w", encoding="utf-8", newline="") as output:
-            writer = csv.DictWriter(output, fieldnames=OUTPUT_FIELDS)
-            writer.writeheader()
-            for row in reader:
-                cas = clean(row.get("CAS番号"))
-                if not cas:
-                    continue
-                location = clean(row.get("保管庫名（日）"))
-                writer.writerow(
+        rows = []
+        for row in reader:
+            cas = clean(row.get("CAS番号"))
+            if not cas:
+                continue
+            location = clean(row.get("保管庫名（日）"))
+            smiles = smiles_by_cas.get(cas, "")
+            rows.append(
+                (
+                    atom_count(smiles),
                     {
                         "cas": cas,
-                        "smiles": smiles_by_cas.get(cas, ""),
+                        "smiles": smiles,
                         "name": clean(row.get("化学物質製品名（日）")),
                         "location": shorten_shelf.get(location, location),
                         "amount": inventory_amount(row),
                         "supplier": clean(row.get("製造元名（英）")),
-                    }
+                    },
                 )
+            )
+
+        rows.sort(key=lambda item: (item[0] is None, item[0] or 0))
+        with destination.open("w", encoding="utf-8", newline="") as output:
+            writer = csv.DictWriter(output, fieldnames=OUTPUT_FIELDS)
+            writer.writeheader()
+            for _, output_row in rows:
+                writer.writerow(output_row)
 
 
 def main() -> int:

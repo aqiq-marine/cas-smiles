@@ -24,6 +24,7 @@ class ConvertTest(unittest.TestCase):
                 writer = csv.DictWriter(stream, fieldnames=("cas", "smiles"))
                 writer.writeheader()
                 writer.writerow({"cas": "50-00-0", "smiles": "C=O"})
+                writer.writerow({"cas": "64-17-5", "smiles": "CCO"})
 
             fields = (
                 "CAS番号",
@@ -42,6 +43,7 @@ class ConvertTest(unittest.TestCase):
                         "使用前重量(g)": "500",
                     }
                 )
+                writer.writerow({"CAS番号": "64-17-5"})
                 writer.writerow({"CAS番号": "", "化学物質製品名（日）": "空欄"})
 
             convert(source, smiles, output, shelves)
@@ -58,6 +60,14 @@ class ConvertTest(unittest.TestCase):
                         "name": "ホルムアルデヒド液",
                         "location": "毒劇物",
                         "amount": "500 g",
+                        "supplier": "",
+                    },
+                    {
+                        "cas": "64-17-5",
+                        "smiles": "CCO",
+                        "name": "",
+                        "location": "",
+                        "amount": "",
                         "supplier": "",
                     }
                 ],

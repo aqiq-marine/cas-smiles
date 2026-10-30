@@ -7,6 +7,7 @@ import pandas as pd
 from cucris import CucrisClient
 from cas_compare import find_unknown_cas
 from cas_smiles import add_smiles
+from smiles_utils import atom_count
 
 
 OUTPUT_COLUMNS = ("cas", "smiles", "name", "location", "amount", "supplier")
@@ -76,7 +77,12 @@ def convert_inventory(df: pd.DataFrame, smiles_by_cas: dict[str, str], shelves_p
             "supplier": clean(row.get("製造元名（英）")),
         })
 
-    return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    result = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    result["_atom_count"] = result["smiles"].map(atom_count)
+    result = result.sort_values(
+        "_atom_count", key=lambda column: column.fillna(float("inf")), kind="stable"
+    )
+    return result.drop(columns="_atom_count")
 
 
 def main() -> int:
